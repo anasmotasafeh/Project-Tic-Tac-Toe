@@ -3,40 +3,9 @@
 
 function player(name, mark) {
 
-  // Variables
-  // let score = 0;
-
-  // Public Methods
   const getName = () => name;
   const getMark = () => mark;
-  // const getScore = () => score;
-  // const scoreUp = () => score++;
-  // const play = (cell1) => {
-  //   while (true) {
-  //     const status = gameboard.makeMove(cell1, mark);
-
-  //     if (status === "valid") break;
-
-  //     if (status === "out_of_range") {
-  //       cell1 = Number(prompt("Choose a cell1 between 1 and 9"));
-  //       continue;
-  //     }
-
-  //     if (status === "occupied") {
-  //       cell1 = Number(prompt("cell1 is taken, choose another one"));
-  //       continue;
-  //     }
-
-  //     if (status === "invalid") {
-  //       cell1 = Number(prompt("Enter a valid number"));
-  //       continue;
-  //     }
-  //   }
-
-    // gameboard.makeMove(cell1, mark);
-  // };
-
-// , play, scoreUp, getScore
+  
   return {getName ,getMark};
 }
 
@@ -59,7 +28,7 @@ const gameboard = (() => {
   const makeMove = (cell1, mark) => {
     const state = validcell1(cell1);
     if (state === "valid"){
-      chosecell1(cell1, mark);
+      choseCell(cell1, mark);
     } 
     return state;
   }
@@ -72,12 +41,12 @@ const gameboard = (() => {
     if (board[cell1 - 1] !== null) return "occupied";
     return "valid";
   };
-  const chosecell1 = (cell1, mark) => {
+  const choseCell = (cell1, mark) => {
     board[cell1 - 1] = mark;
   };
 
   function searchForWine(mark) {
-    return searchRows(mark) || searchColumns(mark);
+    return searchRows(mark) || searchColumns(mark) || searchDiagonals(mark);
   }
   function searchRows(mark){
     const rows = [0, 3, 6];
@@ -99,6 +68,13 @@ const gameboard = (() => {
     }
     return false;
   }
+  function searchDiagonals(mark){
+    return (
+      (board[0] === mark && board[4] === mark && board[8] === mark) ||
+      (board[2] === mark && board[4] === mark && board[6] === mark)
+    );
+  } 
+  
 
   return {isFull, clearBoard, isWiner, makeMove}
 })();
@@ -107,7 +83,7 @@ const gameboard = (() => {
 
 function game() {
   
-
+  // Public methods
   const playRound = () => {
     gameboard.clearBoard();
 
@@ -117,38 +93,30 @@ function game() {
     while(!gameboard.isFull()){
 
       // Player 1 tern
-      let cell1 = Number(prompt("Plyer 1: Chose a cell1"));
-      let state1 = gameboard.makeMove(cell1, player1.getMark());
-      while(state1 !== "valid"){
-        if (state1 === "out_of_range") cell1 = Number(prompt("Out of range! Choose 1-9:"));
-        else if (state1 === "occupied") cell1 = Number(prompt("cell1 occupied! Choose another:"));
-        else if (state1 === "invalid") cell1 = Number(prompt("Invalid input! Enter a number:"));
-        state1 = gameboard.makeMove(cell1, player1.getMark());
-        
-      }
-      
-      if (gameboard.isWiner(player1.getMark())){
-        console.log(`${player1.getName()} Win`);
-        return;
-      }
+      if (playTurn(player1, 1) === "game over") return;
 
       // Player 2 tern
-      let cell2 = Number(prompt("Plyer 2: Chose a cell1"));
-      let state2 = gameboard.makeMove(cell2, player2.getMark());
-      while(state2 !== "valid"){
-        if (state2 === "out_of_range") cell2 = Number(prompt("Out of range! Choose 1-9:"));
-        else if (state2 === "occupied") cell2 = Number(prompt("cell1 occupied! Choose another:"));
-        else if (state2 === "invalid") cell2 = Number(prompt("Invalid input! Enter a number:"));
-        state2 = gameboard.makeMove(cell2, player2.getMark());
-      }
-      
-      if (gameboard.isWiner(player2.getMark())){
-        console.log(`${player2.getName()} Win`);
-        return;
-      }
+      if (playTurn(player2, 2) === "game over") return;
 
     }
     console.log("Tie");
+    return;
+  }
+
+  // Helpers
+  const playTurn = (player, playerNumber) => {
+    let cell = Number(prompt(`Plyer ${playerNumber}: Chose a cell1`));
+      let state = gameboard.makeMove(cell, player.getMark());
+      while(state !== "valid"){
+        if (state === "out_of_range") cell = Number(prompt("Out of range! Choose 1-9:"));
+        else if (state === "occupied") cell = Number(prompt("cell1 occupied! Choose another:"));
+        else if (state === "invalid") cell = Number(prompt("Invalid input! Enter a number:"));
+        state = gameboard.makeMove(cell, player.getMark());
+      }
+      if (gameboard.isWiner(player.getMark())){
+        console.log(`${player.getName()} Win`);
+        return "game over";
+      }
   }
   return {playRound}
   
