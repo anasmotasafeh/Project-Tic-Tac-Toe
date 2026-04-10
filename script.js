@@ -1,20 +1,34 @@
 
+// DOM
+const playersElement = document.querySelector(".players");
+const playersMarksEl = document.querySelector(".playersMarks")
+const formElement = document.querySelector("form");
+const boardElement = document.querySelector(".board");
+const resultElement = document.querySelector(".winner");
+const restartButtonEl = document.querySelector(".restart-button");
 
-
-function player(name, mark) {
-
-  const getName = () => name;
-  const getMark = () => mark;
-  
-  return {getName ,getMark};
+for (let i = 0; i < 9; i++) {
+  const  cellElement = document.createElement("div");
+  cellElement.dataset.id = i + 1;
+  boardElement.appendChild(cellElement);
 }
 
+function player(mark) {
 
-const gameboard = (() => {
+  const getMark = () => mark;
+  
+  return {getMark};
+}
+
+const gameBoard = (() => {
   // Local variables
   const board = new Array(9).fill(null);
 
   // Public Methods
+  const getBoard = () => {
+    let boardCopy = [...board];
+    return boardCopy;
+  }
   const isFull = () => {
     return !board.includes(null);
   }
@@ -76,51 +90,112 @@ const gameboard = (() => {
   } 
   
 
-  return {isFull, clearBoard, isWiner, makeMove}
+  return {getBoard, isFull, clearBoard, isWiner, makeMove}
+})();
+
+const renderGame = (() => {
+
+  // Public Methods
+  const renderPlayers = (p1, p2) => {
+    const player1 = document.createElement("div");
+    player1.textContent = `Player 1: ${p1.getMark()}`;
+    const player2 = document.createElement("div");
+    player2.textContent = `Player 2: ${p2.getMark()}`;
+    playersMarksEl.appendChild(player1);
+    playersMarksEl.appendChild(player2);
+  }
+
+  // const renderBoard = () => {
+  //   boardElement.querySelectorAll("div").innerHTML = "";
+  //   for (let i = 0; i < gameBoard.getBoard().length; i++){
+  //     let cell = document.createElement("div");
+  //     if (gameBoard.getBoard()[i] !== null) {
+  //       cell.textContent = gameBoard.getBoard()[i];
+  //     }
+  //     boardElement.appendChild(cell);
+  //   }
+  // }
+
+  const renderCell = (id, mark) => {
+    const cell = document.querySelector(`[data-id="${id}"]`);
+    cell.textContent = mark;
+  }
+  
+  return{renderPlayers, renderCell}
 })();
 
 
 
-function game() {
-  
-  // Public methods
-  const playRound = () => {
-    gameboard.clearBoard();
+const game = (() => {
+  // Privet prop
+  const players = [];
+  let currentPlayer = 0;
+  let isGameOver = false;
+  const switchPlayer = () => {
+    currentPlayer = 1 - currentPlayer;
+  }
 
-    const player1 = player(prompt("Enter your name: "), prompt("Chose a mark: "));
-    const player2 = player(prompt("Enter your name: "), prompt("Chose a mark: "));
+  // Listeners
+  formElement.addEventListener("submit", (e) => {
+    e.preventDefault(); 
+    if (players.length === 0){
+      
+      players.length = 0;
+      const playersMarks = new FormData(formElement);
+      const player1Mark = playersMarks.get("player1");
+      const player2Mark = playersMarks.get("player2");
 
-    while(!gameboard.isFull()){
-
-      // Player 1 tern
-      if (playTurn(player1, 1) === "game over") return;
-
-      // Player 2 tern
-      if (playTurn(player2, 2) === "game over") return;
-
+      const player1 = player(player1Mark, player1Mark);
+      const player2 = player(player2Mark, player2Mark);
+    
+      players.push(player1);
+      players.push(player2);
+      
+      renderGame.renderPlayers(player1, player2);
     }
-    console.log("Tie");
-    return;
-  }
 
-  // Helpers
-  const playTurn = (player, playerNumber) => {
-    let cell = Number(prompt(`Plyer ${playerNumber}: Chose a cell1`));
-      let state = gameboard.makeMove(cell, player.getMark());
-      while(state !== "valid"){
-        if (state === "out_of_range") cell = Number(prompt("Out of range! Choose 1-9:"));
-        else if (state === "occupied") cell = Number(prompt("cell1 occupied! Choose another:"));
-        else if (state === "invalid") cell = Number(prompt("Invalid input! Enter a number:"));
-        state = gameboard.makeMove(cell, player.getMark());
+
+    // renderGame();
+
+  });
+
+  boardElement.addEventListener("click", (e) => {
+    const cell = Number(e.target.dataset.id);
+
+    if (!isGameOver){
+      if(gameBoard.makeMove(cell, players[currentPlayer].getMark()) === "valid") {
+        
+        renderGame.renderCell(cell, players[currentPlayer].getMark());
+
+        if (gameBoard.isWiner(players[currentPlayer].getMark())) {
+          resultElement.textContent = `الفائز هو: ${players[currentPlayer].getMark()}`;
+          isGameOver = true;
+        }
+        else if (gameBoard.isFull()){
+          resultElement.textContent = `تعادل`;
+          isGameOver = true;
+        }
+        switchPlayer();
       }
-      if (gameboard.isWiner(player.getMark())){
-        console.log(`${player.getName()} Win`);
-        return "game over";
-      }
-  }
-  return {playRound}
+      
+    };
+  })
+
+  restartButtonEl.addEventListener("click", (e) => {
+    gameBoard.clearBoard();
+    players.length = 0;
+
+    resultElement.textContent = "";
+    playersMarksEl.textContent = "";
+    document.querySelectorAll("[data-id]").forEach(cell => {
+      cell.textContent = "";
+    });
+    formElement.reset();
+    currentPlayer = 0;
+    isGameOver = false;
+
+    // renderGame.renderBoard();
+  });
   
-}
+})();
 
-const game1 = game();
-game1.playRound();
